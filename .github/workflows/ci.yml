@@ -2,12 +2,9 @@ name: CI
 on: [push]
 jobs:
   terraform:
-    name: "Terraform"
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - uses: rhythmictech/actions-setup-tfenv@v0.0.4
