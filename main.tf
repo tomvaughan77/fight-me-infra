@@ -21,7 +21,24 @@ resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
   name       = var.amplify_app_name
   repository = "https://github.com/${var.github_owner}/${var.github_repository}"
 
-  oauth_token = var.github_token
+  access_token = var.github_token
+
+  enable_auto_branch_creation = true
+
+  auto_branch_creation_patterns = [
+    "*",
+    "*/**",
+  ]
+
+  auto_branch_creation_config {
+    enable_auto_build = true
+  }
+
+  custom_rule {
+    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>"
+    status = "200"
+    target = "/index.html"
+  }
 
   build_spec = <<EOT
 version: 1
@@ -44,41 +61,12 @@ frontend:
 EOT
 }
 
-resource "aws_amplify_branch" "main" {
+resource "aws_amplify_branch" "fight_me_frontend_amplify_app_main" {
   app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
   branch_name = "main"
-
-  basic_auth_credentials = yamlencode({
-    version = "1.0"
-    frontend = {
-      phases = {
-        preBuild = {
-          commands = [
-            "npx pnpm install"
-          ]
-        }
-        build = {
-          commands = [
-            "npx pnpm build"
-          ]
-        }
-      }
-      artifacts = {
-        baseDirectory = ".next"
-        files = [
-          "**/*"
-        ]
-      }
-      cache = {
-        paths = [
-          ".next/cache/**/*"
-        ]
-      }
-    }
-  })
 }
 
-resource "aws_amplify_webhook" "main_webhook" {
+resource "aws_amplify_webhook" "fight_me_frontend_amplify_app_main_webhook" {
   app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
-  branch_name = aws_amplify_branch.main.branch_name
+  branch_name = aws_amplify_branch.fight_me_frontend_amplify_app_main.branch_name
 }
