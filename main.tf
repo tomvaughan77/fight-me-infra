@@ -77,3 +77,8 @@ resource "aws_amplify_branch" "main" {
     }
   })
 }
+
+resource "aws_amplify_webhook" "main_webhook" {
+  app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
+  branch_name = aws_amplify_branch.main.branch_name
+}
