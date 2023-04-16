@@ -48,7 +48,7 @@ resource "aws_amplify_branch" "main" {
   app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
   branch_name = "main"
 
-  build_spec = jsonencode({
+  basic_auth_credentials = yamlencode({
     version = "1.0"
     frontend = {
       phases = {
