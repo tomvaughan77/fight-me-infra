@@ -1,5 +1,5 @@
-variable "github_token" {
-  description = "GitHub personal access token"
+variable "github_app_token" {
+  description = "GitHub App access token"
   default     = ""
 }
 
