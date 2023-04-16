@@ -29,10 +29,10 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm install
+        - npx pnpm build
     build:
       commands:
-        - npm run build
+        - npx pnpm build
   artifacts:
     baseDirectory: .next
     files:
@@ -54,12 +54,12 @@ resource "aws_amplify_branch" "main" {
       phases = {
         preBuild = {
           commands = [
-            "npm install"
+            "npx pnpm install"
           ]
         }
         build = {
           commands = [
-            "npm run build"
+            "npx pnpm build"
           ]
         }
       }
