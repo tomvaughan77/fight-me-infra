@@ -12,20 +12,34 @@ provider "aws" {
   region = "eu-west-2"
 }
 
-resource "aws_s3_bucket" "my_bucket" {
-  bucket = "my-example-bucket"
+provider "github" {
+  token = getenv("REPOSITORY_ACCESS_TOKEN")
+  owner = getenv("GITHUB_OWNER")
 }
 
-resource "aws_s3_bucket_ownership_controls" "my_bucket" {
-  bucket = aws_s3_bucket.my_bucket.id
-  rule {
-    object_ownership = "BucketOwnerPreferred"
-  }
-}
+resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
+  name       = var.amplify_app_name
+  repository = "https://${var.github_owner}.github.io/${var.github_repository}"
 
-resource "aws_s3_bucket_acl" "my_bucket" {
-  depends_on = [aws_s3_bucket_ownership_controls.my_bucket]
+  oauth_token = var.github_token
 
-  bucket = aws_s3_bucket.my_bucket.id
-  acl    = "private"
+  build_spec = <<EOT
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - pnpm install
+    build:
+      commands:
+        - pnpm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .pnpm-store/**/*
+EOT
 }
