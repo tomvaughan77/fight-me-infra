@@ -29,7 +29,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npx pnpm build
+        - npx pnpm install
     build:
       commands:
         - npx pnpm build
