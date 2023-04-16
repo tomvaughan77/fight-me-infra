@@ -14,13 +14,11 @@ provider "aws" {
 
 resource "aws_s3_bucket" "fight_me_frontend" {
   bucket = "fight-me-frontend-nextjs-app"
-  website {
-    index_document = "index.html"
-  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "fight_me_frontend_ownership_controls" {
   bucket = aws_s3_bucket.fight_me_frontend.id
+
   rule {
     object_ownership = "BucketOwnerPreferred"
   }
@@ -36,13 +34,25 @@ resource "aws_s3_bucket_public_access_block" "fight_me_frontend_public_access_bl
 }
 
 resource "aws_s3_bucket_acl" "fight_me_frontend_acl" {
+  bucket = aws_s3_bucket.fight_me_frontend.id
+  acl    = "public-read"
+
   depends_on = [
     aws_s3_bucket_ownership_controls.fight_me_frontend_ownership_controls,
     aws_s3_bucket_public_access_block.fight_me_frontend_public_access_block,
   ]
+}
 
+resource "aws_s3_bucket_website_configuration" "fight_me_frontend_website_configuration" {
   bucket = aws_s3_bucket.fight_me_frontend.id
-  acl    = "public-read"
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
+  }
 }
 
 resource "aws_s3_object" "fight_me_frontend_object" {
@@ -51,10 +61,16 @@ resource "aws_s3_object" "fight_me_frontend_object" {
   source       = ".next"
   acl          = "public-read"
   content_type = "text/html"
+
+  depends_on = [
+    aws_s3_bucket_acl.fight_me_frontend_acl,
+    aws_s3_bucket_website_configuration.fight_me_frontend_website_configuration,
+  ]
 }
 
 resource "aws_s3_bucket_policy" "fight_me_frontend_bucket_policy" {
   bucket = aws_s3_bucket.fight_me_frontend.id
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -67,63 +83,9 @@ resource "aws_s3_bucket_policy" "fight_me_frontend_bucket_policy" {
       }
     ]
   })
+
+  depends_on = [
+    aws_s3_bucket_acl.fight_me_frontend_acl,
+    aws_s3_bucket_website_configuration.fight_me_frontend_website_configuration,
+  ]
 }
-
-# provider "github" {
-#   token = var.github_token
-#   owner = var.github_owner
-# }
-
-# resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
-#   name       = var.amplify_app_name
-#   repository = "https://github.com/${var.github_owner}/${var.github_repository}"
-
-#   access_token = var.github_token
-
-#   enable_auto_branch_creation = true
-
-#   auto_branch_creation_patterns = [
-#     "*",
-#     "*/**",
-#   ]
-
-#   auto_branch_creation_config {
-#     enable_auto_build = true
-#   }
-
-#   custom_rule {
-#     source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|ttf|map|json)$)([^.]+$)/>"
-#     status = "200"
-#     target = "/index.html"
-#   }
-
-#   build_spec = <<EOT
-# version: 1
-# frontend:
-#   phases:
-#     preBuild:
-#       commands:
-#         - npx pnpm install
-#     build:
-#       commands:
-#         - npx pnpm build
-#   artifacts:
-#     baseDirectory: .next
-#     files:
-#       - '**/*'
-#   cache:
-#     paths:
-#       - node_modules/**/*
-#       - .pnpm-store/**/*
-# EOT
-# }
-
-# resource "aws_amplify_branch" "fight_me_frontend_amplify_app_main" {
-#   app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
-#   branch_name = "main"
-# }
-
-# resource "aws_amplify_webhook" "fight_me_frontend_amplify_app_main_webhook" {
-#   app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
-#   branch_name = aws_amplify_branch.fight_me_frontend_amplify_app_main.branch_name
-# }
