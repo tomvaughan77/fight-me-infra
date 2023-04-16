@@ -13,15 +13,15 @@ provider "aws" {
 }
 
 provider "github" {
-  token = getenv("REPOSITORY_ACCESS_TOKEN")
-  owner = getenv("GITHUB_OWNER")
+  token = var.github_token
+  owner = var.github_owner
 }
 
 resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
-  name       = getenv("AMPLIFY_APP_NAME")
-  repository = "https://${getenv("github_owner")}.github.io/${getenv("GITHUB_REPOSITORY")}"
+  name       = var.amplify_app_name
+  repository = "https://${var.github_owner}.github.io/${var.github_repository}"
 
-  oauth_token = getenv("REPOSITORY_ACCESS_TOKEN")
+  oauth_token = var.github_token
 
   build_spec = <<EOT
 version: 1
