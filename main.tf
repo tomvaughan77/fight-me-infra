@@ -21,7 +21,7 @@ resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
   name       = var.amplify_app_name
   repository = "https://github.com/${var.github_owner}/${var.github_repository}"
 
-  access_token = var.github_app_token
+  oauth_token = var.github_token
 
   build_spec = <<EOT
 version: 1
@@ -76,4 +76,9 @@ resource "aws_amplify_branch" "main" {
       }
     }
   })
+}
+
+resource "aws_amplify_webhook" "main_webhook" {
+  app_id      = aws_amplify_app.fight_me_frontend_amplify_app.id
+  branch_name = aws_amplify_branch.main.branch_name
 }
