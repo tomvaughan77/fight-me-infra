@@ -19,7 +19,7 @@ provider "github" {
 
 resource "aws_amplify_app" "fight_me_frontend_amplify_app" {
   name       = var.amplify_app_name
-  repository = "https://${var.github_owner}.github.io/${var.github_repository}"
+  repository = "https://github.com/${var.github_owner}/${var.github_repository}"
 
   oauth_token = var.github_token
 
