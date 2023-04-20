@@ -24,6 +24,9 @@ jobs:
       - name: Terraform Validate
         run: terraform validate -no-color
 
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+
       - name: Terraform Plan
         run: terraform plan -no-color
         env:

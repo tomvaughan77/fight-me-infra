@@ -16,25 +16,22 @@ resource "aws_security_group" "fight_me_backend_sg" {
   name        = "fight_me_backend_sg"
   description = "Allow inbound traffic for Socket.IO server"
 
+  # tfsec:ignore:aws-ec2-no-public-ingress-sgr
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow inbound http/websocket traffic to server"
   }
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow outbound http/websocket traffic from server"
   }
 }
 
@@ -42,8 +39,15 @@ resource "aws_instance" "fight_me_backend" {
   ami           = "ami-0cd8ad123effa531a" # Amazon Linux 3 for eu-west-2
   instance_type = "t2.micro"              # Free tier eligible instance type
 
-  key_name               = "<your_key_pair_name>"
   vpc_security_group_ids = [aws_security_group.fight_me_backend_sg.id]
+
+  root_block_device {
+    encrypted = true
+  }
+
+  metadata_options {
+    http_tokens = "required"
+  }
 
   user_data = <<EOF
 #!/bin/bash
