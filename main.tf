@@ -46,7 +46,8 @@ resource "aws_instance" "fight_me_backend" {
   }
 
   metadata_options {
-    http_tokens = "required"
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
 
   user_data = <<EOF
