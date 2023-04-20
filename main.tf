@@ -58,7 +58,7 @@ yum install -y python3 python3-pip git
 curl -sSL https://install.python-poetry.org | python3 -
 
 # Clone your project repository
-git clone https://github.com/tomvaughan77/fight-me-backend /home/ec2-user/fight-me-backend
+git clone --depth=1 https://github.com/tomvaughan77/fight-me-backend /home/ec2-user/fight-me-backend
 
 # Set environment variables
 export PATH=$PATH:/root/.local/bin
