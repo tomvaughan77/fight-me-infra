@@ -12,80 +12,70 @@ provider "aws" {
   region = "eu-west-2"
 }
 
-resource "aws_s3_bucket" "fight_me_frontend" {
-  bucket = "fight-me-frontend-nextjs-app"
-}
+resource "aws_security_group" "fight_me_backend_sg" {
+  name        = "fight_me_backend_sg"
+  description = "Allow inbound traffic for Socket.IO server"
 
-resource "aws_s3_bucket_ownership_controls" "fight_me_frontend_ownership_controls" {
-  bucket = aws_s3_bucket.fight_me_frontend.id
+  # tfsec:ignore:aws-ec2-no-public-ingress-sgr
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow inbound http/websocket traffic to server"
+  }
 
-  rule {
-    object_ownership = "BucketOwnerPreferred"
+  # tfsec:ignore:aws-ec2-no-public-egress-sgr
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow outbound http/websocket traffic from server"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "fight_me_frontend_public_access_block" {
-  bucket = aws_s3_bucket.fight_me_frontend.id
+resource "aws_instance" "fight_me_backend" {
+  ami           = "ami-0cd8ad123effa531a" # Amazon Linux 3 for eu-west-2
+  instance_type = "t2.micro"              # Free tier eligible instance type
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
+  vpc_security_group_ids = [aws_security_group.fight_me_backend_sg.id]
 
-resource "aws_s3_bucket_acl" "fight_me_frontend_acl" {
-  bucket = aws_s3_bucket.fight_me_frontend.id
-  acl    = "public-read"
-
-  depends_on = [
-    aws_s3_bucket_ownership_controls.fight_me_frontend_ownership_controls,
-    aws_s3_bucket_public_access_block.fight_me_frontend_public_access_block,
-  ]
-}
-
-resource "aws_s3_bucket_website_configuration" "fight_me_frontend_website_configuration" {
-  bucket = aws_s3_bucket.fight_me_frontend.id
-
-  index_document {
-    suffix = "index.html"
+  root_block_device {
+    encrypted = true
   }
 
-  error_document {
-    key = "index.html"
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  user_data = <<EOF
+#!/bin/bash
+yum update -y
+yum install -y python3 python3-pip git
+
+# Install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Clone your project repository
+git clone --depth=1 https://github.com/tomvaughan77/fight-me-backend /home/ec2-user/fight-me-backend
+
+# Set environment variables
+export PATH=$PATH:/root/.local/bin
+
+# Navigate to the project directory and install dependencies
+cd /home/ec2-user/fight-me-backend
+poetry install
+
+# Run your Socket.IO server (Replace <your_main_file> with the name of your main Python file)
+nohup python fight_me_backend/main.py &
+EOF
+
+  tags = {
+    Name = "fight-me-backend"
   }
 }
 
-resource "aws_s3_object" "fight_me_frontend_object" {
-  key          = "index.html"
-  bucket       = aws_s3_bucket.fight_me_frontend.bucket
-  source       = ".next"
-  acl          = "public-read"
-  content_type = "text/html"
-
-  depends_on = [
-    aws_s3_bucket_acl.fight_me_frontend_acl,
-    aws_s3_bucket_website_configuration.fight_me_frontend_website_configuration,
-  ]
-}
-
-resource "aws_s3_bucket_policy" "fight_me_frontend_bucket_policy" {
-  bucket = aws_s3_bucket.fight_me_frontend.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = ["s3:GetObject"]
-        Resource  = [aws_s3_bucket.fight_me_frontend.arn, "${aws_s3_bucket.fight_me_frontend.arn}/*"]
-      }
-    ]
-  })
-
-  depends_on = [
-    aws_s3_bucket_acl.fight_me_frontend_acl,
-    aws_s3_bucket_website_configuration.fight_me_frontend_website_configuration,
-  ]
+resource "aws_eip" "fight_me_backend_eip" {
+  instance = aws_instance.fight_me_backend.id
 }
