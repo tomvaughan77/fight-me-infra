@@ -22,7 +22,16 @@ resource "aws_security_group" "fight_me_backend_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow inbound http/websocket traffic to server"
+    description = "Allow inbound http/websocket traffic to server on port 80"
+  }
+
+  # tfsec:ignore:aws-ec2-no-public-ingress-sgr
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow inbound http/websocket traffic to server on port 8080"
   }
 
   # tfsec:ignore:aws-ec2-no-public-egress-sgr
