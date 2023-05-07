@@ -19,7 +19,7 @@ resource "aws_security_group" "fight_me_backend_sg" {
   # tfsec:ignore:aws-ec2-no-public-ingress-sgr
   ingress {
     from_port   = 80
-    to_port     = 5000
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow inbound http/websocket traffic to server on port 80"
@@ -28,6 +28,15 @@ resource "aws_security_group" "fight_me_backend_sg" {
   # tfsec:ignore:aws-ec2-no-public-ingress-sgr
   ingress {
     from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow inbound http/websocket traffic to server on port 8080"
+  }
+
+  # tfsec:ignore:aws-ec2-no-public-ingress-sgr
+  ingress {
+    from_port   = 5000
     to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -84,4 +93,8 @@ EOF
   tags = {
     Name = "fight-me-backend"
   }
+}
+
+resource "aws_eip" "fight_me_backend_eip" {
+  instance = aws_instance.fight_me_backend.id
 }
