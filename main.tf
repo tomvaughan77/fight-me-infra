@@ -94,7 +94,3 @@ EOF
     Name = "fight-me-backend"
   }
 }
-
-resource "aws_eip" "fight_me_backend_eip" {
-  instance = aws_instance.fight_me_backend.id
-}
