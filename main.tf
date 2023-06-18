@@ -91,6 +91,16 @@ resource "aws_lb_target_group" "fight_me_backend_tg" {
   port     = 5000
   protocol = "HTTP"
   vpc_id   = aws_default_vpc.default_vpc.id
+
+  health_check {
+    interval            = 30
+    path                = "/health"
+    protocol            = "HTTP"
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
 }
 
 resource "aws_lb_listener" "fight_me_backend_listener" {
@@ -127,6 +137,21 @@ resource "aws_security_group" "lb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # New rule to allow inbound traffic on port 5000
+  ingress {
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -167,13 +192,35 @@ data "aws_ami" "latest_ecs_optimized" {
   owners = ["amazon"]
 }
 
+# ECS Instance Security Group
+resource "aws_security_group" "ecs_instance_sg" {
+  name        = "ecs_instance_sg"
+  description = "Allow inbound traffic from ALB"
+  vpc_id      = aws_default_vpc.default_vpc.id
+
+  ingress {
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lb_sg.id] # Allows traffic from the ALB to the EC2 instance
+  }
+
+  # This will allow all outbound traffic. Modify to meet your needs.
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ECS Instance
 resource "aws_instance" "ecs_instance" {
-  ami           = data.aws_ami.latest_ecs_optimized.id
-  instance_type = "t2.micro"
-
-  # key_name = "your-key-name"
-
+  ami                  = data.aws_ami.latest_ecs_optimized.id
+  instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
+
+  vpc_security_group_ids = [aws_security_group.ecs_instance_sg.id] # Associates the new security group with the EC2 instance
 
   user_data = <<-EOF
               #!/bin/bash
