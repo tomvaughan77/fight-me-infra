@@ -24,3 +24,15 @@ User: `tom`
     ```bash
         aws-vault exec my_iam_name -- terraform init
     ```
+
+4. To deploy infrastructure
+
+    ```bash
+        aws-vault exec my_iam_name -- terraform apply
+    ```
+
+5. To remove infrastructure
+
+    ```bash
+        aws-vault exec my_iam_name -- terraform destroy
+    ```
